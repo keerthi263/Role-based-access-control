@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="login-container">
+  <div class="login-box">
+    <h2>Portal Login</h2>
+    <div id="errMsg" class="error-msg" style="display:none"></div>
+    <form id="loginForm">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter username" required/>
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter password" required/>
+      <label>Role</label>
+      <select id="role" required>
+        <option value="" disabled selected>Select role</option>
+        <option value="student">Student</option>
+        <option value="employee">Employee</option>
+        <option value="supervisor">Supervisor</option>
+      </select>
+      <button type="submit" class="btn-primary">Login</button>
+    </form>
+  </div>
+</div>
+<script>
+  document.getElementById('loginForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const err = document.getElementById('errMsg');
+    err.style.display = 'none';
+    const role = document.getElementById('role').value;
+    if (!role) { err.textContent = 'Please select a role.'; err.style.display = 'block'; return; }
+    try {
+      const res = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('username', data.username);
+        window.location.href = 'dashboard.html';
+      } else {
+        err.textContent = data.message || 'Invalid credentials.';
+        err.style.display = 'block';
+      }
+    } catch {
+      err.textContent = 'Cannot reach server.';
+      err.style.display = 'block';
+    }
+  };
+</script>
+</body>
+</html>

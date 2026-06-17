@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h2>Registration Portal</h2>
+  <div>
+    <span id="userInfo"></span>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="dashboard">
+  <h2 id="welcomeMsg"></h2>
+  <div class="cards" id="cards"></div>
+</div>
+
+<script>
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username') || 'User';
+  if (!role) window.location.href = 'login.html';
+
+  document.getElementById('welcomeMsg').textContent = 'Welcome, ' + username;
+  document.getElementById('userInfo').textContent = username + ' (' + role + ')';
+
+  const cards = document.getElementById('cards');
+
+  cards.innerHTML += `
+    <div class="card">
+      <h3>Student</h3>
+      <p>Register, edit, delete and view students</p>
+      <button class="btn-primary" onclick="location.href='student.html'">Open</button>
+    </div>`;
+
+  if (role === 'employee' || role === 'supervisor') {
+    cards.innerHTML += `
+      <div class="card">
+        <h3>Employee</h3>
+        <p>Register, edit, delete and view employees</p>
+        <button class="btn-primary" onclick="location.href='employee.html'">Open</button>
+      </div>`;
+  }
+
+  if (role === 'supervisor') {
+    cards.innerHTML += `
+      <div class="card">
+        <h3>Supervisor</h3>
+        <p>Full access — manage all employees and students</p>
+        <button class="btn-primary" onclick="location.href='supervisor.html'">Open</button>
+      </div>`;
+  }
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Supervisor Panel</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h2>Supervisor Panel</h2>
+  <div>
+    <span id="userInfo"></span>
+    <button class="btn-primary" onclick="location.href='dashboard.html'" style="margin-right:8px">Dashboard</button>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div id="msg" class="msg" style="display:none"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabEmp" onclick="switchTab('emp')">Employees</button>
+    <button class="tab-btn" id="tabStu" onclick="switchTab('stu')">Students</button>
+  </div>
+
+  <!-- EMPLOYEE SECTION -->
+  <div id="empSection">
+    <div class="form-box">
+      <h3 id="empFormTitle">Add Employee</h3>
+      <div class="form-group"><label>Full Name *</label><input type="text" id="eName" placeholder="Full name"/></div>
+      <div class="form-group"><label>Age *</label><input type="number" id="eAge" placeholder="Age"/></div>
+      <div class="form-group"><label>Gender</label>
+        <select id="eGender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label>Department *</label><input type="text" id="eDept" placeholder="e.g. HR, IT"/></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="eEmail" placeholder="email@example.com"/></div>
+      <div class="form-group"><label>Salary *</label><input type="number" id="eSalary" placeholder="Monthly salary"/></div>
+      <div class="form-group"><label>Phone</label><input type="text" id="ePhone" placeholder="Phone"/></div>
+      <div class="form-group"><label>Address</label><input type="text" id="eAddress" placeholder="Address"/></div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="saveEmp()">Save</button>
+        <button class="btn-warning" onclick="resetEmp()" id="empCancelBtn" style="display:none">Cancel</button>
+      </div>
+    </div>
+    <div class="table-box">
+      <h3>Employee Records</h3>
+      <div class="search-bar">
+        <input type="text" id="empSearch" placeholder="Search..." oninput="renderEmp()"/>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th><th>Department</th><th>Email</th><th>Phone</th><th>Salary</th><th>Actions</th></tr></thead>
+        <tbody id="empTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- STUDENT SECTION -->
+  <div id="stuSection" style="display:none">
+    <div class="form-box">
+      <h3 id="stuFormTitle">Add Student</h3>
+      <div class="form-group"><label>Full Name *</label><input type="text" id="sName" placeholder="Full name"/></div>
+      <div class="form-group"><label>Age *</label><input type="number" id="sAge" placeholder="Age"/></div>
+      <div class="form-group"><label>Gender</label>
+        <select id="sGender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label>Department *</label><input type="text" id="sDept" placeholder="e.g. Computer Science"/></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="sEmail" placeholder="email@example.com"/></div>
+      <div class="form-group"><label>Course</label><input type="text" id="sCourse" placeholder="e.g. B.Tech"/></div>
+      <div class="form-group"><label>Year</label><input type="text" id="sYear" placeholder="e.g. 1st Year"/></div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="saveStu()">Save</button>
+        <button class="btn-warning" onclick="resetStu()" id="stuCancelBtn" style="display:none">Cancel</button>
+      </div>
+    </div>
+    <div class="table-box">
+      <h3>Student Records</h3>
+      <div class="search-bar">
+        <input type="text" id="stuSearch" placeholder="Search..." oninput="renderStu()"/>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th><th>Department</th><th>Email</th><th>Course</th><th>Year</th><th>Actions</th></tr></thead>
+        <tbody id="stuTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('userInfo').textContent = localStorage.getItem('username') + ' (' + localStorage.getItem('role') + ')';
+  if (localStorage.getItem('role') !== 'supervisor') window.location.href = 'dashboard.html';
+
+  let employees = [], students = [], empEditId = null, stuEditId = null;
+
+  async function loadEmp() {
+    const res = await fetch('http://localhost:8000/employees');
+    employees = await res.json();
+    renderEmp();
+  }
+
+  async function loadStu() {
+    const res = await fetch('http://localhost:8000/students');
+    students = await res.json();
+    renderStu();
+  }
+
+  function renderEmp() {
+    const q = document.getElementById('empSearch').value.toLowerCase();
+    const filtered = employees.filter(e => e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q));
+    document.getElementById('empTbody').innerHTML = filtered.map((e, i) => `
+      <tr>
+        <td>${i+1}</td><td>${e.name}</td><td>${e.age}</td><td>${e.gender}</td>
+        <td>${e.department}</td><td>${e.email}</td><td>${e.phone}</td><td>${e.salary}</td>
+        <td class="actions">
+          <button class="btn-warning" onclick="editEmp(${e.id})">Edit</button>
+          <button class="btn-danger" onclick="delEmp(${e.id})">Delete</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function renderStu() {
+    const q = document.getElementById('stuSearch').value.toLowerCase();
+    const filtered = students.filter(s => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q));
+    document.getElementById('stuTbody').innerHTML = filtered.map((s, i) => `
+      <tr>
+        <td>${i+1}</td><td>${s.name}</td><td>${s.age}</td><td>${s.gender}</td>
+        <td>${s.department}</td><td>${s.email}</td><td>${s.course}</td><td>${s.year}</td>
+        <td class="actions">
+          <button class="btn-warning" onclick="editStu(${s.id})">Edit</button>
+          <button class="btn-danger" onclick="delStu(${s.id})">Delete</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function saveEmp() {
+    const body = {
+      name: document.getElementById('eName').value,
+      age: document.getElementById('eAge').value,
+      gender: document.getElementById('eGender').value,
+      department: document.getElementById('eDept').value,
+      email: document.getElementById('eEmail').value,
+      salary: document.getElementById('eSalary').value,
+      phone: document.getElementById('ePhone').value,
+      address: document.getElementById('eAddress').value
+    };
+    if (!body.name || !body.age || !body.department || !body.email || !body.salary) {
+      showMsg('Please fill required fields.', 'error'); return;
+    }
+    if (empEditId) {
+      await fetch('http://localhost:8000/employees/' + empEditId, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      showMsg('Employee updated!', 'success');
+    } else {
+      await fetch('http://localhost:8000/employees', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      showMsg('Employee added!', 'success');
+    }
+    resetEmp(); loadEmp();
+  }
+
+  async function saveStu() {
+    const body = {
+      name: document.getElementById('sName').value,
+      age: document.getElementById('sAge').value,
+      gender: document.getElementById('sGender').value,
+      department: document.getElementById('sDept').value,
+      email: document.getElementById('sEmail').value,
+      course: document.getElementById('sCourse').value,
+      year: document.getElementById('sYear').value
+    };
+    if (!body.name || !body.age || !body.department || !body.email) {
+      showMsg('Please fill required fields.', 'error'); return;
+    }
+    if (stuEditId) {
+      await fetch('http://localhost:8000/students/' + stuEditId, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      showMsg('Student updated!', 'success');
+    } else {
+      await fetch('http://localhost:8000/students', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      showMsg('Student added!', 'success');
+    }
+    resetStu(); loadStu();
+  }
+
+  function editEmp(id) {
+    const e = employees.find(x => x.id === id);
+    empEditId = id;
+    document.getElementById('eName').value = e.name;
+    document.getElementById('eAge').value = e.age;
+    document.getElementById('eGender').value = e.gender;
+    document.getElementById('eDept').value = e.department;
+    document.getElementById('eEmail').value = e.email;
+    document.getElementById('eSalary').value = e.salary;
+    document.getElementById('ePhone').value = e.phone;
+    document.getElementById('eAddress').value = e.address;
+    document.getElementById('empFormTitle').textContent = 'Edit Employee';
+    document.getElementById('empCancelBtn').style.display = 'inline-block';
+    window.scrollTo({top: 0});
+  }
+
+  function editStu(id) {
+    const s = students.find(x => x.id === id);
+    stuEditId = id;
+    document.getElementById('sName').value = s.name;
+    document.getElementById('sAge').value = s.age;
+    document.getElementById('sGender').value = s.gender;
+    document.getElementById('sDept').value = s.department;
+    document.getElementById('sEmail').value = s.email;
+    document.getElementById('sCourse').value = s.course;
+    document.getElementById('sYear').value = s.year;
+    document.getElementById('stuFormTitle').textContent = 'Edit Student';
+    document.getElementById('stuCancelBtn').style.display = 'inline-block';
+    window.scrollTo({top: 0});
+  }
+
+  async function delEmp(id) {
+    if (!confirm('Delete this employee?')) return;
+    await fetch('http://localhost:8000/employees/' + id, { method: 'DELETE' });
+    showMsg('Employee deleted.', 'success'); loadEmp();
+  }
+
+  async function delStu(id) {
+    if (!confirm('Delete this student?')) return;
+    await fetch('http://localhost:8000/students/' + id, { method: 'DELETE' });
+    showMsg('Student deleted.', 'success'); loadStu();
+  }
+
+  function resetEmp() {
+    empEditId = null;
+    ['eName','eAge','eDept','eEmail','eSalary','ePhone','eAddress'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eGender').value = '';
+    document.getElementById('empFormTitle').textContent = 'Add Employee';
+    document.getElementById('empCancelBtn').style.display = 'none';
+  }
+
+  function resetStu() {
+    stuEditId = null;
+    ['sName','sAge','sDept','sEmail','sCourse','sYear'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('sGender').value = '';
+    document.getElementById('stuFormTitle').textContent = 'Add Student';
+    document.getElementById('stuCancelBtn').style.display = 'none';
+  }
+
+  function switchTab(tab) {
+    document.getElementById('empSection').style.display = tab === 'emp' ? 'block' : 'none';
+    document.getElementById('stuSection').style.display = tab === 'stu' ? 'block' : 'none';
+    document.getElementById('tabEmp').className = 'tab-btn' + (tab === 'emp' ? ' active' : '');
+    document.getElementById('tabStu').className = 'tab-btn' + (tab === 'stu' ? ' active' : '');
+    if (tab === 'stu') loadStu();
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text; el.className = 'msg ' + type; el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3000);
+  }
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  loadEmp();
+</script>
+</body>
+</html>
